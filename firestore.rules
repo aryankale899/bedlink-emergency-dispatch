@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['Dispatcher', 'Charge Nurse', 'Hospital Coordinator', 'Medical Director'];
+    }
+
+    function isValidBedHold(data) {
+      return data.keys().hasAll(['id', 'caseId', 'hospitalId', 'bedType', 'status', 'requestedByUid']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.caseId is string && data.caseId.size() <= 64 &&
+             data.hospitalId is string && data.hospitalId.size() <= 64 &&
+             data.bedType is string && data.bedType.size() <= 32 &&
+             data.status in ['pending', 'held', 'rejected', 'expired', 'arrived', 'cancelled'] &&
+             data.requestedByUid is string && data.requestedByUid.size() <= 128;
+    }
+
+    function isValidActivityLog(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'action', 'result']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.timestamp is number &&
+             data.action is string && data.action.size() <= 64 &&
+             data.result is string && data.result.size() <= 512;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(request.resource.data);
+    }
+
+    // Emergency Bed Holds Collection
+    match /holds/{holdId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(holdId) && isValidBedHold(request.resource.data);
+      allow update: if isSignedIn() && isValidId(holdId) && isValidBedHold(request.resource.data);
+      allow delete: if isSignedIn() && isValidId(holdId);
+    }
+
+    // System Activity Logs
+    match /activity_logs/{logId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(logId) && isValidActivityLog(request.resource.data);
+    }
+  }
+}
