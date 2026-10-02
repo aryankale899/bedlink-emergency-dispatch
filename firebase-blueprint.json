@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role-based access information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "role": { 
+          "type": "string", 
+          "enum": ["Dispatcher", "Charge Nurse", "Hospital Coordinator", "Medical Director"] 
+        },
+        "hospitalId": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "BedHoldRecord": {
+      "title": "BedHoldRecord",
+      "description": "Emergency bed hold request between ambulance and hospital",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "hospitalId": { "type": "string", "maxLength": 64 },
+        "ambulanceUnit": { "type": "string", "maxLength": 64 },
+        "bedType": { "type": "string", "maxLength": 32 },
+        "status": { 
+          "type": "string", 
+          "enum": ["pending", "held", "rejected", "expired", "arrived", "cancelled"] 
+        },
+        "requestedByUid": { "type": "string", "maxLength": 128 },
+        "requestedAt": { "type": "number" },
+        "expiresAt": { "type": "number" },
+        "respondedAt": { "type": "number" },
+        "rejectionReason": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "caseId", "hospitalId", "bedType", "status", "requestedByUid"]
+    },
+    "ActivityLogEvent": {
+      "title": "ActivityLogEvent",
+      "description": "Chronological audit event in emergency dispatch mesh",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "timestamp": { "type": "number" },
+        "action": { "type": "string", "maxLength": 64 },
+        "hospitalId": { "type": "string", "maxLength": 64 },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "result": { "type": "string", "maxLength": 512 },
+        "userId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "timestamp", "action", "result"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents keyed by Firebase Auth UID"
+    },
+    "/holds/{holdId}": {
+      "schema": "BedHoldRecord",
+      "description": "Active and historical emergency bed hold requests"
+    },
+    "/activity_logs/{logId}": {
+      "schema": "ActivityLogEvent",
+      "description": "Audit events for system monitoring"
+    }
+  }
+}

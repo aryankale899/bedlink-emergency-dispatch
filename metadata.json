@@ -1,0 +1,6 @@
+{
+  "name": "BedLink - Emergency Hospital Bed Dispatch & Hold System",
+  "description": "Critical emergency care bed coordination platform linking ambulance crews with nearest verified ICU, ventilator, oxygen, and specialty hospital beds with 10-second nurse updates and 2-minute fail-safe bed hold confirmations.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
